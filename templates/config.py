@@ -1,0 +1,44 @@
+"""Application settings, loaded from environment variables / .env."""
+
+from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    # AWS
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_region: str = "us-east-1"
+    s3_bucket: str = ""
+
+    # Uploads
+    max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB
+
+    # Bedrock
+    bedrock_embed_model: str = "amazon.titan-embed-text-v2:0"
+    bedrock_chat_model: str = "amazon.nova-2-lite-v1:0"
+    embed_dim: int = 1024
+
+    # Pinecone
+    pinecone_api_key: str = ""
+    pinecone_index_name: str = ""
+    pinecone_cloud: str = "aws"
+    pinecone_region: str = "us-east-1"
+    pinecone_ready_timeout: int = 180
+
+    # Postgres
+    database_url: str = ""
+
+    # Rius observability
+    rius_api_key: str = ""
+    rius_service_name: str = "umbrella_ai"
+    rius_disabled: bool = False
+    rius_capture_content: bool = False
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
