@@ -40,5 +40,9 @@ class Settings(BaseSettings):
 
 
 @lru_cache
-def get_settings() -> Settings:
+def settings() -> Settings:
+    """Cached settings instance: `from app.config import settings; settings().s3_bucket`."""
     return Settings()
+
+
+get_settings = settings  # alias
