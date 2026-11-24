@@ -19,8 +19,14 @@ class Settings(BaseSettings):
 
     # Bedrock
     bedrock_embed_model: str = "amazon.titan-embed-text-v2:0"
-    bedrock_chat_model: str = "amazon.nova-2-lite-v1:0"
+    bedrock_chat_model: str = "us.amazon.nova-2-lite-v1:0"
     embed_dim: int = 1024
+
+    # OpenAI (embeddings) and Anthropic (chat) -- used instead of Bedrock
+    openai_api_key: str = ""
+    openai_embed_model: str = "text-embedding-3-large"  # output size set by embed_dim
+    anthropic_api_key: str = ""
+    anthropic_chat_model: str = "claude-haiku-5-5"
 
     # Pinecone
     pinecone_api_key: str = ""

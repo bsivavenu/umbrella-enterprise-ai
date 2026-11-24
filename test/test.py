@@ -18,7 +18,7 @@ load_dotenv()
 
 REGION = os.getenv("AWS_REGION", "us-east-1")
 EMBED_MODEL = os.getenv("BEDROCK_EMBED_MODEL", "amazon.titan-embed-text-v2:0")
-CHAT_MODEL = os.getenv("BEDROCK_CHAT_MODEL", "amazon.nova-2-lite-v1:0")
+CHAT_MODEL = os.getenv("BEDROCK_CHAT_MODEL", "us.amazon.nova-2-lite-v1:0")
 EMBED_DIM = int(os.getenv("EMBED_DIM", "1024"))
 
 client = boto3.client("bedrock-runtime", region_name=REGION)

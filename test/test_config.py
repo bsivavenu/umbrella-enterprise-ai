@@ -31,7 +31,7 @@ def test_defaults() -> None:
     assert s.aws_region == "us-east-1"
     assert s.max_upload_bytes == 10 * 1024 * 1024 == 10_485_760
     assert s.bedrock_embed_model == "amazon.titan-embed-text-v2:0"
-    assert s.bedrock_chat_model == "amazon.nova-2-lite-v1:0"
+    assert s.bedrock_chat_model == "us.amazon.nova-2-lite-v1:0"
     assert s.embed_dim == 1024
     assert s.pinecone_cloud == "aws" and s.pinecone_region == "us-east-1"
     assert s.pinecone_ready_timeout == 180
