@@ -26,6 +26,16 @@ swapped for OpenAI and Anthropic (Bedrock was not available on the author's AWS 
 
 ## How it works
 
+**Architecture** (plain, editable versions with their HTML source are in [`docs/diagrams/`](docs/diagrams)):
+
+![Umbrella AI architecture](docs/Umbrella%20AI%20Architecture%20Diagram.png)
+
+**Workflow** (upload, asking a question, and approvals):
+
+![Umbrella AI workflow](docs/Umbrella%20AI%20Workflow%20Diagram.png)
+
+The same question flow in text:
+
 ```
 Ask a question
    |

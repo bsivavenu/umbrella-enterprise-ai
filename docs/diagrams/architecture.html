@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Umbrella AI - Architecture</title>
+<style>
+  :root { --ink:#16233b; --muted:#53627c; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f4f7fb; font-family: Inter, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); zoom:1.5; }
+  .page { width:1600px; padding:14px 16px 18px; }
+  .title { background:#0f3a6b; color:#fff; border-radius:12px; text-align:center; padding:12px 20px; margin:0 auto 14px; width:1180px; }
+  .title h1 { margin:0; font-size:30px; letter-spacing:.3px; }
+  .title p { margin:5px 0 0; font-size:15px; opacity:.92; }
+  .layer { border:2px solid; border-radius:12px; padding:12px 14px; position:relative; }
+  .badge { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%; color:#fff; font-weight:800; font-size:16px; flex:none; }
+  h2 { margin:0; font-size:19px; }
+  h2 small { display:block; font-size:13px; font-weight:500; color:var(--muted); }
+  .head { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .card { background:#fff; border:1.5px solid; border-radius:10px; padding:9px 11px; font-size:13px; line-height:1.4; }
+  .card b { font-size:14px; }
+  ul { margin:6px 0 0; padding-left:17px; } li { margin:2px 0; }
+  .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:12px; }
+  .conn { display:flex; justify-content:center; align-items:center; gap:10px; height:34px; font-size:13px; color:#1f4fa3; }
+  .conn .arrow { font-size:22px; line-height:1; }
+
+  /* layer 1 */
+  .l1 { background:#eaf4ff; border-color:#9cc7f0; }
+  .l1 .row { display:flex; gap:12px; align-items:stretch; }
+  .l1 .who { width:300px; display:flex; flex-direction:column; justify-content:center; }
+  .browser { border:2px solid #34455f; border-radius:8px; background:#fff; margin-top:8px; overflow:hidden; width:210px; }
+  .browser .bar { background:#dfe6f0; height:12px; }
+  .browser .body { display:flex; height:62px; }
+  .browser .side { width:48px; background:#10182c; } .browser .main { flex:1; padding:7px; background:#111b30; }
+  .browser .line { height:7px; border-radius:4px; background:#2a3d5c; margin-bottom:6px; } .browser .line.g { background:#5fd5bf; width:55%; }
+  .l1 .cards { flex:1; display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  .l1 .card { border-color:#b7d6f2; text-align:center; border-style:dashed; }
+  .ico { font-size:30px; display:block; margin-bottom:4px; }
+  .lg { height:24px; width:24px; vertical-align:middle; margin-right:6px; }
+  .lgs { height:17px; width:17px; vertical-align:-3px; margin:0 4px 0 0; }
+  .lgrow { display:flex; align-items:center; justify-content:center; gap:7px; }
+  .lgrow img { height:28px; width:28px; }
+
+  /* layer 2 */
+  .l2 { background:#ecf9ef; border-color:#9bd3a8; display:flex; gap:14px; }
+  .backend { width:330px; flex:none; }
+  .endpoints { display:grid; grid-template-columns:1fr; gap:3px; margin-top:6px; }
+  .endpoints div { background:#fff; border:1px solid #bfe3c8; border-radius:6px; padding:3px 8px; font-family:ui-monospace,Menlo,monospace; font-size:11.5px; }
+  .chip { margin-top:8px; background:#fff; border:1px dashed #6bb87c; border-radius:8px; padding:6px 8px; font-size:12px; }
+  .core { flex:1; border:2px dashed #3a9a55; border-radius:12px; padding:10px 12px; background:#f6fcf7; }
+  .core .head h2 { color:#1d7a3a; }
+  .flow { display:flex; align-items:stretch; gap:6px; }
+  .flow .arr { align-self:center; font-size:22px; color:#2563b8; }
+  .flow .card { flex:1; }
+  .step-guard { border-color:#e58aa0; background:#fff5f7; } .step-ret { border-color:#8fb0ee; background:#f2f6ff; }
+  .step-gen { border-color:#f0c26b; background:#fffaf0; } .step-val { border-color:#e58aa0; background:#fff5f7; } .step-resp { border-color:#7cc4ee; background:#f1faff; }
+  .branch { margin-top:8px; display:flex; gap:8px; align-items:center; font-size:12.5px; }
+  .branch .card { border-color:#cbd5e1; background:#fff; padding:6px 10px; }
+
+  /* connectors row */
+  .conns { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; height:58px; margin:4px 0 6px; }
+  .conns div { text-align:center; font-size:12px; color:var(--muted); display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.15; }
+  .conns .a { font-size:19px; color:#2563b8; }
+
+  /* layer 3 */
+  .row6 { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
+  .col { border:2px solid; border-radius:12px; padding:10px 11px; font-size:13px; line-height:1.4; }
+  .col .head { margin-bottom:6px; } .col h2 { font-size:16px; }
+  .col .logo { text-align:center; font-weight:800; font-size:20px; margin:2px 0 6px; }
+  .col .sub { background:#fff; border:1px solid; border-radius:8px; padding:6px 8px; margin:6px 0; font-size:12.5px; }
+  .c4 { background:#f1ecfb; border-color:#b9a4e6; } .c4 .badge { background:#6d3fc4; } .c4 .sub { border-color:#cdbdf0; }
+  .c5 { background:#e9f8f1; border-color:#8fd3b2; } .c5 .badge { background:#1f9d6b; }
+  .c6 { background:#eaf3ff; border-color:#9cc3f2; } .c6 .badge { background:#1f66c7; }
+  .c7 { background:#eef4fb; border-color:#9db9dc; } .c7 .badge { background:#2b5f9e; } .c7 .sub { border-color:#c3d4ea; }
+  .c8 { background:#fff6e8; border-color:#f0c88a; } .c8 .badge { background:#ee8a1e; } .c8 .sub { border-color:#f4d9ae; }
+  .c9 { background:#fdecef; border-color:#eba3b0; } .c9 .badge { background:#c2263f; } .c9 .sub { border-color:#f2c0c9; }
+  .table { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; line-height:1.55; }
+
+  /* HITL */
+  .l10 { margin-top:12px; background:#fff0f2; border-color:#f0a7b4; display:flex; align-items:center; gap:12px; }
+  .l10 .head { margin:0; width:300px; flex:none; } .l10 .badge { background:#c2263f; }
+  .l10 .steps { flex:1; display:flex; align-items:center; gap:8px; }
+  .l10 .steps .card { flex:1; text-align:center; } .l10 .steps .arr { font-size:22px; color:#c2263f; }
+  .s1 { border-color:#e9a0ac; background:#fff3f5; } .s2 { border-color:#b9a4e6; background:#f5f0fe; } .s3 { border-color:#8fd3a6; background:#effaf2; } .s4 { border-color:#9cc3f2; background:#eef5ff; }
+  .foot { margin-top:10px; font-size:12.5px; color:var(--muted); display:flex; gap:22px; flex-wrap:wrap; }
+  .foot b { color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="title">
+    <h1>Umbrella AI &ndash; Architecture</h1>
+    <p>RAG &bull; LangGraph pipeline &bull; Guardrails &bull; Human-in-the-loop &bull; Pinecone &bull; PostgreSQL &bull; S3 &bull; LangSmith / Rius</p>
+  </div>
+
+  <!-- 1. users -->
+  <section class="layer l1">
+    <div class="row">
+      <div class="who">
+        <div class="head"><span class="badge" style="background:#1f66c7">1</span><h2>Users (Frontend)<small>Employees / clients, one workspace (no login in the demo)</small></h2></div>
+        <div class="browser"><div class="bar"></div><div class="body"><div class="side"></div><div class="main"><div class="line"></div><div class="line g"></div><div class="line"></div></div></div></div>
+        <div style="font-size:12px;color:#53627c;margin-top:4px"><img class="lgs" src="icons/html5.svg" alt="">Web browser &ndash; HTML + CSS + <img class="lgs" src="icons/javascript.svg" alt="" style="margin-left:2px">JS<br><span class="mono">app/templates, app/static</span></div>
+      </div>
+      <div class="cards">
+        <div class="card"><span class="ico">💬</span><b>Knowledge chat</b><br>Cited answers, follow-ups, copy, 👍</div>
+        <div class="card"><span class="ico">☁️</span><b>Upload documents</b><br>PDF, DOCX, TXT, MD (max 10 MB)</div>
+        <div class="card"><span class="ico">📄</span><b>Documents</b><br>List with status: pending, ready, failed</div>
+        <div class="card"><span class="ico">✅</span><b>Approvals</b><br>Admin approves or rejects held requests</div>
+        <div class="card"><span class="ico">📊</span><b>Metrics</b><br>Document, feedback and guardrail counts</div>
+      </div>
+    </div>
+  </section>
+  <div class="conn"><span class="arrow">&#8597;</span> HTTPS &middot; REST API (JSON) &middot; uploads go straight to S3 with a presigned link</div>
+
+  <!-- 2 + 3. backend and pipeline -->
+  <section class="layer l2">
+    <div class="backend">
+      <div class="head"><span class="badge" style="background:#1d9a4b">2</span><h2><img class="lg" src="icons/fastapi.svg" alt="">Backend (FastAPI)<small><span class="mono">app/main.py</span></small></h2></div>
+      <div class="endpoints">
+        <div>POST /api/chat</div>
+        <div>POST /api/documents/uploads</div>
+        <div>POST /api/documents/complete</div>
+        <div>GET &nbsp;/api/documents</div>
+        <div>GET &nbsp;/api/conversations/{id}/messages</div>
+        <div>POST /api/feedback</div>
+        <div>GET &nbsp;/api/approvals &middot; POST .../decision</div>
+        <div>GET &nbsp;/api/admin/metrics &middot; /guardrails</div>
+      </div>
+      <div class="chip"><img class="lgs" src="icons/python.svg" alt=""><b>Who is asking</b> &ndash; <span class="mono">Principal</span> (<span class="mono">demo_context.py</span>): subject, tenant, groups, admin. Every query is filtered by tenant.</div>
+    </div>
+
+    <div class="core">
+      <div class="head"><span class="badge" style="background:#1d9a4b">3</span><h2><img class="lg" src="icons/langchain.svg" alt="">Application core &ndash; LangGraph pipeline <span class="mono" style="font-weight:500">(app/graph.py)</span></h2></div>
+      <div class="flow">
+        <div class="card step-guard"><b>🛡️ Guard</b><ul><li>Reject empty questions</li><li>Block prompt-injection and secret requests</li></ul></div>
+        <div class="arr">&rarr;</div>
+        <div class="card step-ret"><b>🔍 Retrieve</b><ul><li>Embed the question (+ previous one for follow-ups)</li><li>Search Pinecone as this user</li><li>Drop hits below <span class="mono">MIN_RELEVANCE</span> (0.30)</li></ul></div>
+        <div class="arr">&rarr;</div>
+        <div class="card step-gen"><b>✍️ Generate</b><ul><li>Answer only from the numbered passages</li><li>Cite as [1], [2]</li><li>Recent chat history as context</li></ul></div>
+        <div class="arr">&rarr;</div>
+        <div class="card step-val"><b>🛡️ Validate</b><ul><li>Block leaked keys, private keys, passwords</li></ul></div>
+        <div class="arr">&rarr;</div>
+        <div class="card step-resp"><b>📨 Response</b><ul><li>Answer + sources + conversation id</li><li>Turn saved to Postgres</li></ul></div>
+      </div>
+      <div class="branch"><span>If Retrieve finds nothing relevant:</span><div class="card">skip Generate &rarr; fixed reply &ldquo;could not find supporting evidence in documents you are authorized to access&rdquo; (no model call)</div></div>
+    </div>
+  </section>
+
+  <div class="conns">
+    <div><span class="a">&#8597;</span>Upload file<br>(presigned URL)</div>
+    <div><span class="a">&#8597;</span>Document ingestion<br>(on /complete)</div>
+    <div><span class="a">&#8597;</span>Store / search<br>embeddings</div>
+    <div><span class="a">&#8597;</span>App data, memory,<br>audit log</div>
+    <div><span class="a">&#8597;</span>Embedding and<br>chat calls</div>
+    <div><span class="a">&#8597;</span>Traces, token<br>counts</div>
+  </div>
+
+  <!-- 4-9 -->
+  <section class="row6">
+    <div class="col c4">
+      <div class="head"><span class="badge">4</span><h2>File storage<small>AWS S3</small></h2></div>
+      <div class="logo lgrow" style="color:#c0392b"><img src="icons/bucket.svg" alt="">Amazon S3</div>
+      <ul><li>Stores the original files</li><li>Browser uploads directly (presigned PUT, 5 min)</li><li>CORS enabled</li><li class="mono">tenants/&lt;tenant&gt;/incoming/&lt;id&gt;/v1.ext</li></ul>
+    </div>
+    <div class="col c5">
+      <div class="head"><span class="badge">5</span><h2>Ingestion worker<small><img class="lgs" src="icons/python.svg" alt=""><span class="mono">worker/ingest.py</span></small></h2></div>
+      <ul><li>Lock the row, status <i>processing</i></li><li>Download; size and PDF checks</li><li>Parse PDF, DOCX, TXT</li><li>Chunk: 1200 chars, 180 overlap</li><li>Embed each chunk</li><li>Upsert to Pinecone (batches of 50)</li><li>Status <i>ready</i> or <i>failed</i> + audit event</li></ul>
+    </div>
+    <div class="col c6">
+      <div class="head"><span class="badge">6</span><h2>Vector database<small>Pinecone</small></h2></div>
+      <div class="logo lgrow" style="color:#0b3d91"><img src="icons/vectors.svg" alt="">Pinecone</div>
+      <ul><li>Index <span class="mono">umbrella-vectors</span><br>1024 dims, cosine</li><li>One namespace per tenant</li><li>Metadata: text, title, page, owner, allowed groups</li><li><b>Access filter in the query</b>: group match or owner</li></ul>
+    </div>
+    <div class="col c7">
+      <div class="head"><span class="badge">7</span><h2>Relational database<small>PostgreSQL on Render</small></h2></div>
+      <div class="logo lgrow" style="color:#336791;font-size:17px;margin-top:0"><img src="icons/postgresql.svg" alt="">PostgreSQL <img class="lgs" src="icons/render.svg" alt="" style="margin:0 0 0 4px"><span style="font-size:12px;font-weight:600;color:#53627c">Render</span></div>
+      <div class="sub table">documents<br>chat_messages<br>approvals<br>feedback<br>audit_events</div>
+      <ul><li>Every table has <span class="mono">tenant_id</span></li><li>Created once by <span class="mono">scripts/init_db.py</span></li></ul>
+    </div>
+    <div class="col c8">
+      <div class="head"><span class="badge">8</span><h2>AI models<small>embeddings and chat</small></h2></div>
+      <div class="sub"><b><img class="lgs" src="icons/chip.svg" alt="">OpenAI</b><br>text-embedding-3-large<br>1024 dimensions</div>
+      <div class="sub"><b><img class="lgs" src="icons/anthropic.svg" alt="">Anthropic</b><br>claude-haiku-5-5<br>writes the answers</div>
+      <div style="font-size:11.5px;color:#7a5b22">(AWS Bedrock is not available on this account)</div>
+    </div>
+    <div class="col c9">
+      <div class="head"><span class="badge">9</span><h2>Observability<small><img class="lgs" src="icons/langchain.svg" alt="">LangSmith or Rius</small></h2></div>
+      <ul><li>Switch in <span class="mono">.env</span>: <span class="mono">OBSERVABILITY_PROVIDER</span> = langsmith | rius | none</li><li>Every step is traced</li><li>Token counts per model call</li><li><span class="mono">CAPTURE</span> = off | metadata | full; <b>no text by default</b></li></ul>
+    </div>
+  </section>
+
+  <!-- 10 HITL -->
+  <section class="layer l10">
+    <div class="head"><span class="badge">10</span><h2>👥 Human-in-the-loop<small>Administrators approve or reject sensitive requests</small></h2></div>
+    <div class="steps">
+      <div class="card s1"><b>Sensitive request detected</b><br>keywords: delete, export, send to, update policy</div>
+      <div class="arr">&rarr;</div>
+      <div class="card s2"><b>Approval request created</b><br><span class="mono">approvals</span> row, status pending; user told to wait</div>
+      <div class="arr">&rarr;</div>
+      <div class="card s3"><b>Admin review</b><br>Approvals tab: approve ✔ or reject ✘</div>
+      <div class="arr">&rarr;</div>
+      <div class="card s4"><b>Decision recorded</b><br>status + reviewer + audit event; nothing is executed</div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span><b>Tenant isolation:</b> every SQL query filters on <span class="mono">tenant_id</span>; Pinecone namespace <span class="mono">tenant-&lt;name&gt;</span>.</span>
+    <span><b>Access control:</b> a chunk is searchable only by members of its allowed groups or its owner.</span>
+    <span><b>Settings:</b> all in <span class="mono">.env</span>, read by <span class="mono">app/config.py</span>.</span>
+  </div>
+</div>
+</body>
+</html>

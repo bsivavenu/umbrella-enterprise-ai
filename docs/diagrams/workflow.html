@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Umbrella AI - Workflow</title>
+<style>
+  :root { --ink:#16233b; --muted:#53627c; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f4f7fb; font-family: Inter, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); zoom:1.5; }
+  .page { width:1600px; padding:14px 16px 18px; }
+  .title { background:#0f3a6b; color:#fff; border-radius:12px; text-align:center; padding:12px 20px; margin:0 auto 14px; width:1180px; }
+  .title h1 { margin:0; font-size:30px; } .title p { margin:5px 0 0; font-size:15px; opacity:.92; }
+  .lane { border:2px solid; border-radius:12px; padding:12px 14px 14px; margin-bottom:14px; }
+  .lane > h2 { margin:0 0 10px; font-size:19px; display:flex; align-items:center; gap:10px; }
+  .lane > h2 small { font-size:13px; font-weight:500; color:var(--muted); }
+  .lane > h2 .tag { background:#0f3a6b; color:#fff; border-radius:6px; padding:2px 9px; font-size:13px; }
+  .grid { display:grid; gap:0 26px; align-items:stretch; }
+  .g8 { grid-template-columns:repeat(8,minmax(0,1fr)); } .g9 { grid-template-columns:repeat(9,minmax(0,1fr)); gap:0 22px; } .g5 { grid-template-columns:repeat(5,minmax(0,1fr)); }
+  .step { position:relative; background:#fff; border:1.5px solid; border-radius:10px; padding:9px 9px 8px; font-size:12.5px; line-height:1.38; }
+  .step { overflow-wrap:anywhere; }
+  .step b { display:block; font-size:13.5px; margin-bottom:3px; }
+  .num { position:absolute; top:-11px; left:-9px; width:24px; height:24px; border-radius:50%; background:#0f3a6b; color:#fff; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .who img { height:14px; width:14px; background:#fff; border-radius:50%; padding:1.5px; margin-right:4px; vertical-align:-3px; }
+  .who { white-space:nowrap; display:inline-block; font-size:11px; font-weight:700; border-radius:10px; padding:1px 7px; margin-bottom:4px; color:#fff; }
+  .w-user { background:#1f66c7; } .w-api { background:#1d9a4b; } .w-s3 { background:#6d3fc4; } .w-worker { background:#1f9d6b; } .w-ai { background:#ee8a1e; } .w-pc { background:#0b3d91; } .w-db { background:#2b5f9e; } .w-guard { background:#c2263f; } .w-admin { background:#7a3fb0; }
+  .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:11.5px; }
+  .step.arrow::after { content:"\2192"; position:absolute; right:-24px; top:50%; transform:translateY(-50%); font-size:22px; color:#2563b8; }
+  .step.down::before { content:"\2193"; position:absolute; left:50%; bottom:-26px; transform:translateX(-50%); font-size:22px; color:#c2263f; }
+  .row2 { margin-top:34px; }
+  .alt { border-style:dashed; background:#fff8f9; font-size:12px; }
+  .ghost { visibility:hidden; }
+  .ok { border-color:#8fd3a6; } .bad { border-color:#e9a0ac; } .info { border-color:#9cc3f2; } .warn { border-color:#f0c88a; } .purple { border-color:#b9a4e6; }
+  .A { background:#f3eefc; border-color:#b9a4e6; } .B { background:#eaf4ff; border-color:#9cc7f0; } .C { background:#fff0f2; border-color:#f0a7b4; }
+  .note { margin-top:10px; font-size:12.5px; color:var(--muted); }
+  .note b { color:var(--ink); }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="title">
+    <h1>Umbrella AI &ndash; Workflow</h1>
+    <p>How a document gets in, how a question gets answered, and how sensitive requests are approved</p>
+  </div>
+
+  <!-- A: upload -->
+  <section class="lane A">
+    <h2><span class="tag">A</span> 📤 Upload and ingest a document <small>Documents tab &rarr; searchable in a few seconds</small></h2>
+    <div class="grid g8">
+      <div class="step arrow purple"><span class="num">1</span><span class="who w-user"><img src="icons/html5.svg" alt="">Browser</span><b>Choose a file</b>Sends the filename to the <i>uploads</i> endpoint. Only .pdf .docx .txt .md are accepted.</div>
+      <div class="step arrow purple"><span class="num">2</span><span class="who w-api"><img src="icons/fastapi.svg" alt="">FastAPI</span><b>Register it</b>Creates a <span class="mono">documents</span> row (<i>pending</i>) + audit event. Returns a temporary S3 upload link (5 min).</div>
+      <div class="step arrow purple"><span class="num">3</span><span class="who w-s3"><img src="icons/bucket.svg" alt="">S3</span><b>Upload the file</b>Browser sends the file straight to S3 with the presigned <span class="mono">PUT</span>. The server never handles the bytes.</div>
+      <div class="step arrow purple"><span class="num">4</span><span class="who w-user"><img src="icons/html5.svg" alt="">Browser</span><b>Say it is done</b>Calls the <i>complete</i> endpoint with the document id. A document of another tenant gives 404.</div>
+      <div class="step arrow purple"><span class="num">5</span><span class="who w-worker"><img src="icons/python.svg" alt="">Worker</span><b>Lock and download</b>Row locked, status <i>processing</i>. Checks: &le; 10 MB, real PDF header.</div>
+      <div class="step arrow purple"><span class="num">6</span><span class="who w-worker"><img src="icons/python.svg" alt="">Worker</span><b>Parse and chunk</b>PDF by page, DOCX, text. Cut into 1200-character chunks overlapping by 180.</div>
+      <div class="step arrow purple"><span class="num">7</span><span class="who w-ai"><img src="icons/chip.svg" alt=""><img src="icons/vectors.svg" alt="">OpenAI + Pinecone</span><b>Embed and store</b>Each chunk &rarr; 1024 numbers. Upsert with text, title, page, owner, groups (batches of 50).</div>
+      <div class="step purple"><span class="num">8</span><span class="who w-db"><img src="icons/postgresql.svg" alt="">Postgres</span><b>Mark ready</b>Status <i>ready</i> + audit event. On any error: <i>failed</i>, can be retried.</div>
+    </div>
+  </section>
+
+  <!-- B: question -->
+  <section class="lane B">
+    <h2><span class="tag">B</span> 💬 Ask a question <small>Knowledge chat &rarr; cited answer</small></h2>
+    <div class="grid g9">
+      <div class="step arrow info"><span class="num">1</span><span class="who w-user"><img src="icons/html5.svg" alt="">User</span><b>Ask</b><span class="mono">POST /api/chat</span> with the question and conversation id.</div>
+      <div class="step arrow info down"><span class="num">2</span><span class="who w-guard">🛡️ Input guardrail</span><b>Safe?</b>Not empty, no injection or secret-request patterns.</div>
+      <div class="step arrow info down"><span class="num">3</span><span class="who w-guard">🛡️ HITL check</span><b>Sensitive?</b>Contains delete, export, send to, update policy?</div>
+      <div class="step arrow info"><span class="num">4</span><span class="who w-db"><img src="icons/postgresql.svg" alt="">Postgres</span><b>Load history</b>Last 6 question/answer pairs of this conversation.</div>
+      <div class="step arrow info"><span class="num">5</span><span class="who w-pc"><img src="icons/vectors.svg" alt="">Retrieve</span><b>Search</b>Embed the question (+ previous one). Pinecone query with the access filter, then drop scores &lt; 0.30.</div>
+      <div class="step arrow info down"><span class="num">6</span><span class="who w-api"><img src="icons/langchain.svg" alt="">Route</span><b>Evidence found?</b>Passages left after the cut-off?</div>
+      <div class="step arrow info"><span class="num">7</span><span class="who w-ai"><img src="icons/anthropic.svg" alt="">Anthropic</span><b>Generate</b>Answer from numbered passages and history, citing [1], [2].</div>
+      <div class="step arrow info down"><span class="num">8</span><span class="who w-guard">🛡️ Output guardrail</span><b>Clean?</b>No leaked keys or passwords in the answer.</div>
+      <div class="step info"><span class="num">9</span><span class="who w-db"><img src="icons/postgresql.svg" alt="">Postgres</span><b>Save and reply</b>Save the turn. UI shows markdown answer, sources, 👍, Copy.</div>
+    </div>
+    <div class="grid g9 row2">
+      <div class="ghost step"></div>
+      <div class="step alt bad"><b>Blocked</b>HTTP 400 + audit event (input blocked). Nothing is searched.</div>
+      <div class="step alt warn"><b>Held</b>Approval row (<i>pending</i>), reply &ldquo;needs administrator approval&rdquo; &rarr; lane C.</div>
+      <div class="ghost step"></div>
+      <div class="ghost step"></div>
+      <div class="step alt bad"><b>No evidence</b>Fixed reply &ldquo;could not find supporting evidence&hellip;&rdquo;. The model is not called.</div>
+      <div class="ghost step"></div>
+      <div class="step alt bad"><b>Leak found</b>Answer replaced, audit event (output blocked), sources hidden.</div>
+      <div class="ghost step"></div>
+    </div>
+    <div class="note"><b>Access control happens inside step 5:</b> Pinecone only returns chunks whose allowed groups include one of the user's groups, or that the user owns, inside the user's tenant namespace. Text the user may not read never reaches the model.</div>
+  </section>
+
+  <!-- C: HITL -->
+  <section class="lane C">
+    <h2><span class="tag">C</span> ✅ Human-in-the-loop approval <small>Approvals tab (administrators)</small></h2>
+    <div class="grid g5">
+      <div class="step arrow bad"><span class="num">1</span><span class="who w-guard">🛡️ Detected</span><b>Sensitive request held</b>From lane B step 3. The question is stored, not answered.</div>
+      <div class="step arrow purple"><span class="num">2</span><span class="who w-db"><img src="icons/postgresql.svg" alt="">Postgres</span><b>Approval created</b><i>approvals</i> row, status <i>pending</i>, requester recorded, audit event.</div>
+      <div class="step arrow ok"><span class="num">3</span><span class="who w-admin">👤 Admin</span><b>Review</b>Approvals tab lists requests (admins only; others get 403). Click Approve or Reject and confirm.</div>
+      <div class="step arrow info"><span class="num">4</span><span class="who w-api"><img src="icons/fastapi.svg" alt="">FastAPI</span><b>Decision saved</b>The <i>decision</i> endpoint updates status, reviewer and time. Only pending requests can be decided.</div>
+      <div class="step info"><span class="num">5</span><span class="who w-db">📋 Audit log</span><b>Recorded only</b>Audit event written. The response says <i>executed: false</i>; no delete or export is performed.</div>
+    </div>
+  </section>
+
+  <div class="legend">
+    <span><b>Solid arrow</b> &rarr; next step</span>
+    <span><b style="color:#c2263f">&darr;</b> a check that can divert the request (dashed box below)</span>
+    <span>Tracing (LangSmith / Rius) records the timing and token counts of every step, never the text by default.</span>
+  </div>
+</div>
+</body>
+</html>
