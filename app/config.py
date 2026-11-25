@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     database_url: str = ""
 
     # RAG behaviour
-    min_relevance: float = 0.25   # drop search hits scoring below this (cosine, 0-1)
+    min_relevance: float = 0.30   # drop search hits scoring below this (cosine, 0-1); measured: unrelated <= 0.23, real matches >= 0.33
     memory_turns: int = 6         # past question/answer pairs sent back to the model
     hitl_enabled: bool = True     # human-in-the-loop approvals (used later by main.py)
 
