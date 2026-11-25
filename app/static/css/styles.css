@@ -1,0 +1,116 @@
+/* Umbrella interface styles. Dark theme; layout is sidebar + main panel. */
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,Arial;background:#0b1020;color:#e9eefb}
+*{box-sizing:border-box}
+body{margin:0}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:255px;flex-shrink:0;background:#10182c;border-right:1px solid #26334b;padding:30px 18px;display:flex;flex-direction:column}
+.logo{font-size:27px;color:#8de4dc;font-weight:800;letter-spacing:3px;margin-bottom:55px}
+.logo span{color:#fff}
+.logo small{display:block;font-size:10px;color:#8193af;letter-spacing:2px;margin-left:32px}
+.eyebrow{font-size:11px;letter-spacing:2px;color:#8194b2;font-weight:700;margin:8px 12px 18px}
+.nav{border:0;background:transparent;color:#9fb1ce;text-align:left;padding:14px;border-radius:11px;cursor:pointer;font-size:14px}
+.nav.active,.nav:hover{background:#203047;color:#b8fff2}
+.sidebottom{margin-top:auto;border-top:1px solid #26334b;padding-top:20px;font-size:12px;color:#b5c5df}
+.sidebottom button{display:block;margin-top:10px}
+main{flex:1;max-width:1500px;margin:auto;width:100%;padding:22px 3%}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+h1{font-size:27px;margin:0 0 5px}
+h2{font-size:21px}
+.pill{border:1px solid #2b655c;background:#15352f;color:#a5f4c7;border-radius:30px;padding:10px 16px;font-size:12px}
+.panel{background:#111b30;border:1px solid #263550;border-radius:22px;min-height:620px;padding:32px;display:flex;flex-direction:column}
+.hidden{display:none!important}
+.hero{text-align:center;margin:35px auto 20px}
+.spark{font-size:46px;color:#72e5d2}
+.hero p,.panel p{color:#9aaccc}
+.suggestions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:25px}
+button{cursor:pointer;border:1px solid #3b516e;background:#202f47;color:#dceafa;border-radius:10px;padding:11px 14px}
+button:hover{border-color:#6de4cf}
+button[type=submit],#signIn{background:#5fd5bf;color:#071c24;border:0;font-weight:700}
+.composer{display:flex;align-items:end;gap:12px;margin-top:auto;background:#1a2941;border:1px solid #344d6c;padding:12px;border-radius:16px}
+textarea{flex:1;resize:vertical;background:transparent;color:white;border:0;outline:0;font:inherit}
+.hint{text-align:center;font-size:11px;color:#758ba8;margin-top:14px}
+.message{max-width:1000px;margin:14px 0;padding:16px 22px;border-radius:15px;background:#1a2a44;line-height:1.7;white-space:pre-wrap}
+.message.user{margin-left:auto;background:#193f46}
+.sources{font-size:12px;color:#a8c3dc;margin-top:10px}
+.sources details{margin:6px 0}
+.sources summary{cursor:pointer}
+#uploadForm{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}
+input{background:#1b2a42;border:1px solid #344d6c;color:#e7f3ff;padding:12px;border-radius:10px}
+#docs{line-height:2.4}
+#toast{position:fixed;bottom:22px;right:22px;background:#263d4d;padding:14px 18px;border-radius:10px;display:none}
+pre{white-space:pre-wrap;color:#b9e9df}
+@media(max-width:760px){.shell{display:block}.sidebar{width:100%;padding:16px;display:block}.logo{margin-bottom:15px}.nav{display:inline-block;padding:9px}main{padding:20px 12px}.panel{padding:18px;min-height:70vh}header{display:block}.pill{display:inline-block;margin-top:15px}}
+
+/* Approvals tab */
+.section-header{display:flex;align-items:start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.approval-card{border:1px solid #344d6c;background:#18263c;border-radius:14px;padding:18px;margin:14px 0}
+.approval-header{display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap}
+.approval-header strong{overflow-wrap:anywhere}
+.approval-status{font-size:12px;text-transform:capitalize;border-radius:20px;padding:5px 11px;background:#34435d}
+.approval-status.pending{background:#574526;color:#ffe6a2}
+.approval-status.approved{background:#164c3d;color:#adf5c9}
+.approval-status.rejected{background:#572b35;color:#ffc3c9}
+.approval-actions{display:flex;gap:12px;margin-top:12px}
+.approve-button{background:#256e59;color:white}
+.reject-button{background:#753443;color:white}
+button:disabled{opacity:.5;cursor:not-allowed}
+#approvalSummary{color:#b9e9df;margin:12px 0}
+
+/* ---- Chat ----
+   The panel fills the window height. Before the first question the welcome block shows;
+   once a conversation starts (class "started") it is hidden so answers get the whole panel. */
+#chatView {
+  height: calc(100dvh - 120px);
+  min-height: 520px;
+  overflow: hidden;
+  padding: 20px 26px;
+}
+#chatView #messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #52718b #111b30;
+  padding: 4px 10px 12px 0;
+}
+#chatView #messages::-webkit-scrollbar { width: 9px; }
+#chatView #messages::-webkit-scrollbar-track { background: #111b30; }
+#chatView #messages::-webkit-scrollbar-thumb { background: #52718b; border-radius: 10px; }
+#chatView .composer { flex-shrink: 0; margin-top: 10px; }
+#chatView .hint { flex-shrink: 0; margin-top: 8px; }
+#chatView .hero { flex-shrink: 0; margin: 10px auto 14px; }
+#chatView.started .hero { display: none; }
+#chatView .message { overflow-wrap: anywhere; }
+
+/* small "new conversation" button, top right of the panel */
+#chatView #newChat {
+  flex-shrink: 0;
+  align-self: flex-end;
+  padding: 6px 12px;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+/* answers are rendered from simple markdown (paragraphs, bullets, bold) */
+.message.assistant { white-space: normal; }
+.message p { margin: 0 0 10px; color: inherit; }
+.message ul, .message ol { margin: 0 0 10px; padding-left: 22px; }
+.message li { margin: 3px 0; }
+.message h3, .message h4 { margin: 12px 0 6px; font-size: 16px; color: #b8fff2; }
+.message strong { color: #fff; }
+.message code { background: #0f1a2e; padding: 1px 6px; border-radius: 5px; font-size: .92em; }
+.message > :last-child { margin-bottom: 0; }
+.message-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+.message-actions button { padding: 6px 12px; font-size: 12px; }
+.sources summary { padding: 3px 0; }
+.sources p { margin: 4px 0 8px 16px; white-space: pre-wrap; }
+
+@media (max-width: 760px) {
+  main { padding: 12px; }
+  #chatView { height: calc(100dvh - 190px); min-height: 400px; padding: 14px; }
+  #chatView .hero .spark { font-size: 30px; }
+  #chatView .hero h2 { font-size: 17px; }
+  #chatView .suggestions { margin-top: 10px; }
+}

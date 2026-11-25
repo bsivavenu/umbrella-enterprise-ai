@@ -1,0 +1,16 @@
+Umbrella Corp - IT Security Rules (sample document)
+
+1. Passwords
+Passwords must be at least 14 characters long. Passwords must be changed every 180 days. Never reuse a password from another service. Use the company password manager to store credentials.
+
+2. Two-factor authentication
+Two-factor authentication is mandatory for email, the VPN and all admin systems. Use the authenticator app. SMS codes are not permitted.
+
+3. Devices
+Company laptops must have full-disk encryption enabled and must lock automatically after 5 minutes of inactivity. Personal devices may not be used to access customer data.
+
+4. Reporting incidents
+Report lost devices, suspicious emails or suspected data leaks to security@umbrella.example within 1 hour of noticing. Do not try to investigate on your own.
+
+5. Data handling
+Customer data must never be copied to personal cloud storage or sent through personal email. Confidential documents must be shared only with named colleagues, never with public links.
