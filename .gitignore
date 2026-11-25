@@ -221,3 +221,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local editor files (SQLTools connection, scratch queries)
+.vscode/
+*.session.sql
+
+# Browser test artifacts (screenshots, snapshots)
+.playwright-mcp/
