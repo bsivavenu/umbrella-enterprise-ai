@@ -135,15 +135,20 @@ def main() -> int:
         os.environ.update(saved)
 
     # Runs last, against the real .env, with the original environment restored.
-    try:
-        test_real_dotenv_loads_expected_keys()
-        print("[PASS] test_real_dotenv_loads_expected_keys")
-    except Exception as exc:  # noqa: BLE001
-        failures += 1
-        print(f"[FAIL] test_real_dotenv_loads_expected_keys: "
-              f"{type(exc).__name__}: {exc}")
+    # Skipped when there is no .env (for example in CI, where no secrets exist).
+    total = len(tests)
+    if (Path(__file__).resolve().parent.parent / ".env").exists():
+        total += 1
+        try:
+            test_real_dotenv_loads_expected_keys()
+            print("[PASS] test_real_dotenv_loads_expected_keys")
+        except Exception as exc:  # noqa: BLE001
+            failures += 1
+            print(f"[FAIL] test_real_dotenv_loads_expected_keys: "
+                  f"{type(exc).__name__}: {exc}")
+    else:
+        print("[SKIP] test_real_dotenv_loads_expected_keys: no .env file")
 
-    total = len(tests) + 1
     print(f"\n{total - failures}/{total} passed")
     return 1 if failures else 0
 

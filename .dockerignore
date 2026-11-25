@@ -1,0 +1,21 @@
+# Never put secrets or local files into the image
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.github
+.vscode
+.venv
+*.session.sql
+
+# Not needed at run time
+__pycache__/
+*.pyc
+test/
+docs/
+sample_docs/
+README.md
+CLAUDE.md
+LICENSE
+.playwright-mcp/

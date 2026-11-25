@@ -1,0 +1,62 @@
+# Render blueprint: tells Render how to run Umbrella AI.
+#
+# Render builds the Dockerfile in this repo and redeploys only after the GitHub checks
+# (.github/workflows/ci.yml) pass: see autoDeployTrigger below.
+#
+# Values marked `sync: false` are secrets. Render asks you for them once, when you create the
+# service from this file. They are never stored in git. Plain values below are not secret.
+services:
+  - type: web
+    name: umbrella-ai
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    # Must be the same region as the Postgres database (Oregon). It cannot be changed later.
+    region: oregon
+    # "free" sleeps when idle and takes about a minute to wake. Use a paid plan for always-on.
+    plan: free
+    healthCheckPath: /health/live
+    # Deploy a new version only when CI passes on the linked branch.
+    autoDeployTrigger: checksPass
+    envVars:
+      # ---- secrets: entered in the Render dashboard ----
+      - key: DATABASE_URL        # the Render Postgres connection string
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: LANGSMITH_API_KEY
+        sync: false
+      - key: S3_BUCKET           # bucket name; environment specific
+        sync: false
+
+      # ---- plain settings (same as .env.example) ----
+      - key: AWS_REGION
+        value: us-east-1
+      - key: PINECONE_INDEX_NAME
+        value: umbrella-vectors
+      - key: PINECONE_CLOUD
+        value: aws
+      - key: PINECONE_REGION
+        value: us-east-1
+      - key: EMBED_DIM
+        value: "1024"
+      - key: OBSERVABILITY_PROVIDER
+        value: langsmith
+      - key: OBSERVABILITY_CAPTURE
+        value: metadata
+      - key: LANGSMITH_PROJECT
+        value: umbrella
+      - key: MIN_RELEVANCE
+        value: "0.30"
+      - key: MEMORY_TURNS
+        value: "6"
+      - key: HITL_ENABLED
+        value: "true"

@@ -1,5 +1,7 @@
 # Umbrella Enterprise AI
 
+[![CI](https://github.com/bsivavenu/umbrella-enterprise-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/bsivavenu/umbrella-enterprise-ai/actions/workflows/ci.yml)
+
 A document question-answering (RAG) web app. Upload company documents, then ask questions in plain
 language and get answers that cite the exact passages they came from. Each user only ever gets
 answers drawn from documents they are allowed to see.
@@ -113,6 +115,35 @@ The S3 bucket must allow `PUT` from the browser (a CORS rule), because uploads g
 | `OBSERVABILITY_PROVIDER` | `langsmith` | `langsmith`, `rius` or `none` |
 | `OBSERVABILITY_CAPTURE` | `metadata` | `off` (timing and errors), `metadata` (plus token counts), `full` (plus prompts and answers, use only with fake data) |
 
+## CI and deployment
+
+- **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on every push to `main` and every
+  pull request: it installs the locked dependencies, compiles the code, runs the tests that need no
+  keys, then builds the Docker image and checks that it starts and answers. It uses no secrets.
+- **Deployment** is on [Render](https://render.com). [`render.yaml`](render.yaml) describes the web
+  service (built from the [`Dockerfile`](Dockerfile)), and Render redeploys only after the CI checks pass.
+
+First-time setup on Render:
+
+1. In the Render dashboard choose **New > Blueprint** and connect this GitHub repository.
+2. Render reads `render.yaml` and asks for the secret values: `DATABASE_URL`, `OPENAI_API_KEY`,
+   `ANTHROPIC_API_KEY`, `PINECONE_API_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+   `S3_BUCKET` and `LANGSMITH_API_KEY`. They are stored in Render, never in git.
+3. Apply. When the deploy finishes, open the service URL and check `/health/live`.
+4. If the database is new, create the tables once: `uv run scripts/init_db.py` (see Quick start).
+
+The service runs in the Oregon region, next to the database. The free plan sleeps when idle and
+takes about a minute to wake; choose a paid plan in `render.yaml` for always-on.
+**Anyone with the service URL can use the app and your API credits, because the demo has no login.**
+Do not share the URL, or add authentication first (see [Limitations](#limitations)).
+
+Run the container locally:
+
+```bash
+docker build -t umbrella-ai .
+docker run --rm -p 8000:8000 --env-file .env umbrella-ai
+```
+
 ## Project layout
 
 ```
@@ -134,6 +165,9 @@ scripts/init_db.py   creates the tables
 sample_docs/         fake documents for trying the app
 test/                tests that run against the real services
 docs/SETUP.md        detailed notes: what each file does, build order, known issues
+Dockerfile           container image (non-root, no secrets baked in)
+render.yaml          Render blueprint (web service, auto-deploy after CI passes)
+.github/workflows/ci.yml   tests and Docker build on every push and pull request
 ```
 
 ## Tests
@@ -166,7 +200,6 @@ without Bedrock access.
 - **No OCR.** Scanned PDFs without a text layer are rejected with a clear message.
 - **Ingestion runs inside the upload request.** Fine for small files; large files would need a
   background worker.
-- Not yet included: Dockerfile and deployment pipeline.
 
 ## License
 

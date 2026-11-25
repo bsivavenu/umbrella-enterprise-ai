@@ -4,7 +4,8 @@ Part 1 (offline): guardrails and the routing function.
 Part 2 (live):    seeds one document into a throwaway Pinecone tenant, then runs chat() for real
                   (OpenAI embeddings, Pinecone search, Anthropic answer). Cleans up afterwards.
 
-Run with: uv run test/test_graph.py
+Run with: uv run test/test_graph.py            (both parts)
+          uv run test/test_graph.py --offline  (part 1 only; no keys or network, used by CI)
 """
 
 import sys
@@ -97,15 +98,16 @@ def part2_live() -> None:
 
 
 def main() -> int:
+    global failures
     part1_offline()
-    try:
-        part2_live()
-    except Exception as exc:  # noqa: BLE001
-        global failures
-        failures += 1
-        print(f"[FAIL] live part: {type(exc).__name__}: {str(exc)[:200]}")
-    finally:
-        delete_document(TENANT, IDS)
+    if "--offline" not in sys.argv:
+        try:
+            part2_live()
+        except Exception as exc:  # noqa: BLE001
+            failures += 1
+            print(f"[FAIL] live part: {type(exc).__name__}: {str(exc)[:200]}")
+        finally:
+            delete_document(TENANT, IDS)
     print(f"\n{'all passed' if failures == 0 else f'{failures} failed'}")
     return 1 if failures else 0
 

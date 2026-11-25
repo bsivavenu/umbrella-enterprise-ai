@@ -1,0 +1,92 @@
+# Continuous integration: runs on every push to main and on every pull request.
+#
+#   test    install the locked dependencies, compile everything, run the tests that need no keys
+#   docker  build the image and start it, then check the app answers
+#
+# No secrets are used here. The tests that call real services (OpenAI, Anthropic, Pinecone,
+# S3, Postgres) are run by hand with `uv run test/<name>.py`, not in CI.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "sample_docs/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (no keys needed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Compile all code (catches syntax errors)
+        run: uv run python -m compileall -q app worker scripts test
+
+      - name: Settings
+        run: uv run test/test_config.py
+
+      - name: Guardrails and graph routing (offline part)
+        run: uv run test/test_graph.py --offline
+
+      - name: Tracing switch (live parts skip themselves without keys)
+        run: uv run test/test_observability.py
+
+  docker:
+    name: Docker image builds and starts
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t umbrella-ai:ci .
+
+      - name: Image must not contain secrets
+        run: docker run --rm umbrella-ai:ci sh -c 'test ! -e /srv/.env && echo "no .env in image"'
+
+      - name: Start container
+        run: docker run -d --name umbrella -p 8000:8000 -e OBSERVABILITY_PROVIDER=none umbrella-ai:ci
+
+      - name: App answers
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/health/live && break
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8000/health/live
+          curl -fsS http://127.0.0.1:8000/ | grep -q "Umbrella"
+          curl -fsS -o /dev/null http://127.0.0.1:8000/static/js/app.js
+          curl -fsS -o /dev/null http://127.0.0.1:8000/static/css/styles.css
+
+      - name: Show container logs if something failed
+        if: failure()
+        run: docker logs umbrella
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f umbrella

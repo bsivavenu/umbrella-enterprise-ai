@@ -54,7 +54,7 @@ setup, then ingestion and RAG, then observability, then FastAPI and UI, then int
 | 12 | `worker/ingest.py` | Done | Document processing. Needs db, aws, vector |
 | 13 | `app/main.py`, `app/templates/`, `app/static/` | Done | The FastAPI app and UI. Needs everything above |
 | 14 | `README.md`, `docs/SETUP.md` | Done | Project overview and these notes |
-| 15 | `Dockerfile`, `.github/workflows/cicd.yaml` | Not started | Packaging and deployment (the reference deploys to AWS; Render would need its own version) |
+| 15 | `Dockerfile`, `.dockerignore`, `.github/workflows/ci.yml`, `render.yaml` | Done (not yet run on GitHub or Render) | Packaging, CI and deployment. The reference deploys to AWS EC2 with a self-hosted runner; this project uses GitHub Actions for CI and Render for deployment |
 
 ## 4. What each file does
 
@@ -202,7 +202,17 @@ Run from the project root with `uv run`. No `pytest` needed.
 Everything up to the interface is committed and pushed to GitHub (`main`). Changes made after that and not yet committed: the `MIN_RELEVANCE` change, this file, `README.md`, and the deletion of the leftover `main.py` that `uv init` created in the project root (the real app file is `app/main.py`).
 Leave out of commits: `.vscode/` and `umbrella.session.sql` (local editor files). `.env` is gitignored.
 
-## 12. Habits worth keeping
+## 12. CI/CD and deployment
+
+- **`Dockerfile`**: two stages. Stage 1 installs the exact dependencies from `uv.lock`; stage 2 copies only that environment plus `app/`, `worker/`, `scripts/` and `infra/`. Runs as a non-root user (uid 10001), has a health check on `/health/live`, and listens on `$PORT` (default 8000). No secrets are baked in; settings come from environment variables.
+- **`.dockerignore`**: keeps `.env`, `.git`, `.venv`, tests, docs and sample documents out of the image. The CI job also checks the image has no `.env`.
+- **`.github/workflows/ci.yml`**: job `test` (locked install, compile everything, `test_config`, `test_graph --offline`, `test_observability`) then job `docker` (build, start, check `/health/live`, `/`, the JS and the CSS). It uses no secrets, so the tests that call real services stay manual.
+- **`render.yaml`**: a Render blueprint for one Docker web service in the Oregon region (same as the database). `autoDeployTrigger: checksPass` means Render deploys only after CI passes. Secret variables are `sync: false`: Render asks for them once when the service is created.
+- Tested locally: the three offline test steps in a clean copy without `.env`, and the image build, start and health check. Not yet run: the workflow on GitHub and the deploy on Render.
+- **Warning:** a deployed service is public and the app has no login, so anyone with the URL can use your API credits and see your documents. Do not share the URL, or add authentication first.
+- Tests that need real services are run by hand: `test_vector`, `test_aws`, `test_ingest`, `test_memory`, `test_main`, and the live part of `test_graph` and `test_observability`.
+
+## 13. Habits worth keeping
 
 - Never put real secrets in `.env.example`, code, or docs. `.env` is gitignored.
 - Always pass SQL values as parameters (`%s`), never build SQL with f-strings.
