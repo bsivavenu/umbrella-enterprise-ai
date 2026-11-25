@@ -11,6 +11,12 @@ swapped for OpenAI and Anthropic (Bedrock was not available on the author's AWS 
 > **Status:** working demo. It uses a single fixed demo user (no login) and is not hardened for
 > production. See [Limitations](#limitations).
 
+## Screenshot
+
+![Umbrella AI knowledge chat: a cited answer with its source passage](docs/Umbrella%20AI%20Interface%20Screenshot.png)
+
+*Knowledge chat. The answer cites its sources as [1], and each source expands to show the passage it came from.*
+
 ## What it does
 
 - **Knowledge chat** with cited sources, conversation memory, and follow-up questions.
