@@ -46,7 +46,7 @@ setup, then ingestion and RAG, then observability, then FastAPI and UI, then int
 | 8 | `app/vector.py` | Done | Pinecone read/write. Needs config and observability |
 | 9 | `app/aws.py` | Done (adapted) | `embed()` and `answer()`. Needs config and observability |
 | 10 | `app/guardrails.py`, `demo_context.py`, `memory.py` | Next | Small; no AWS needed |
-| 11 | `app/graph.py`, `app/rag.py` | Later | Wires guard, retrieve, generate, validate. Needs `aws.py` and `vector.py` |
+| 11 | `app/graph.py` | Done | Wires guard, retrieve, generate, validate. Needs `aws.py` and `vector.py` |
 | 12 | `worker/ingest.py` | Later | Document processing. Needs db, aws, vector |
 | 13 | `app/main.py`, `app/templates/`, `app/static/` | Later | The FastAPI app and UI. Needs everything above |
 
