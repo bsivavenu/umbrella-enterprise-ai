@@ -55,7 +55,7 @@ def namespace(tenant):
 def upsert(tenant, records):
     return index().upsert(vectors=records, namespace=namespace(tenant))
 
-@trace("search")
+@trace("search", kind="retriever")
 def search(tenant, vector, groups, owner, limit=5):
     acl = {'$or': [{'allowed_groups': {'$in': list(groups)}},
                    {'owner_sub': {'$eq': owner}}]}

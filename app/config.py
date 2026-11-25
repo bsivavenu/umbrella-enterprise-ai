@@ -1,7 +1,9 @@
 """Application settings, loaded from environment variables / .env."""
 
 from functools import lru_cache
+from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,11 +40,26 @@ class Settings(BaseSettings):
     # Postgres
     database_url: str = ""
 
-    # Rius observability
+    # Observability: pick the tool and how much to record.
+    #   provider: rius | langsmith | none
+    #   capture:  off (timing + errors only) | metadata (+ token counts, model) | full (+ prompts and answers)
+    observability_provider: Literal["rius", "langsmith", "none"] = "langsmith"
+    observability_capture: Literal["off", "metadata", "full"] = "metadata"
+
+    # LangSmith (traces go to the project below; it is created automatically on first trace)
+    langsmith_api_key: str = ""
+    langsmith_project: str = "umbrella"
+
+    # Rius
     rius_api_key: str = ""
     rius_service_name: str = "umbrella_ai"
     rius_disabled: bool = False
     rius_capture_content: bool = False
+
+    @field_validator("observability_provider", "observability_capture", mode="before")
+    @classmethod
+    def _normalise(cls, v):
+        return v.strip().lower() if isinstance(v, str) else v
 
 
 @lru_cache
