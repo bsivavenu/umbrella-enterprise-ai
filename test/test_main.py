@@ -10,6 +10,7 @@ import uuid
 from pathlib import Path
 
 os.environ["OBSERVABILITY_PROVIDER"] = "none"   # keep test runs out of LangSmith
+os.environ["APP_PASSWORD"] = ""                 # test the API itself; the password gate has its own test
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx  # noqa: E402

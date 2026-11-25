@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # Postgres
     database_url: str = ""
 
+    # Access: optional shared password for the whole app (HTTP Basic); empty = no password
+    app_password: str = ""
+
     # RAG behaviour
     min_relevance: float = 0.30   # drop search hits scoring below this (cosine, 0-1); measured: unrelated <= 0.23, real matches >= 0.33
     memory_turns: int = 6         # past question/answer pairs sent back to the model

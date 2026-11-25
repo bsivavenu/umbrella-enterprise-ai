@@ -105,6 +105,8 @@ setup, then ingestion and RAG, then observability, then FastAPI and UI, then int
 
 **`app/memory.py`: conversation memory.** `history()` returns the last `MEMORY_TURNS` question/answer pairs (oldest first), `save_turn()` stores one pair, `list_messages()` returns the whole thread. Every query filters on tenant and conversation id.
 
+**`app/auth.py`: the shared-password gate.** If `APP_PASSWORD` is set, a middleware in `main.py` answers 401 (so the browser shows its login box) unless the request carries HTTP Basic credentials with that password; any username works. The comparison is constant-time. Only `/health/live` is exempt. Empty `APP_PASSWORD` means no password (local development); the app logs a warning at startup in that case. One shared password, not user accounts; use a long random value and only over HTTPS.
+
 **`app/demo_context.py`: who is asking.** One fixed `Principal` (subject `demo-operator`, tenant `demo-workspace`, group `workspace`, admin). Every endpoint receives it via `Depends(principal)`. Real login later means changing only `principal()`.
 
 **`worker/ingest.py`: the librarian's assistant.** `process_s3_key(key)` locks the document row, downloads the file (size and PDF header checks), parses it (PDF by page, DOCX, text), cuts it into 1200-character chunks that overlap by 180, embeds and upserts them in batches of 50, then marks the row `ready` (or `failed`) and writes an audit event. Scanned PDFs are not supported (no OCR).
@@ -128,6 +130,7 @@ Names only. See `.env.example` for the template.
 - Bedrock (not used right now): `BEDROCK_EMBED_MODEL`, `BEDROCK_CHAT_MODEL` (`us.amazon.nova-2-lite-v1:0`)
 - Pinecone: `PINECONE_API_KEY`, `PINECONE_INDEX_NAME`, `PINECONE_CLOUD`, `PINECONE_REGION`, `PINECONE_READY_TIMEOUT`
 - Postgres: `DATABASE_URL`
+- Access: `APP_PASSWORD` (shared password for the whole app; empty = open)
 - RAG behaviour: `MIN_RELEVANCE` (0.30), `MEMORY_TURNS` (6), `HITL_ENABLED` (True)
 - Observability: `OBSERVABILITY_PROVIDER` (`langsmith` | `rius` | `none`), `OBSERVABILITY_CAPTURE` (`off` | `metadata` | `full`), `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`, `RIUS_API_KEY`, `RIUS_SERVICE_NAME`, `RIUS_DISABLED`. (`RIUS_CAPTURE_CONTENT` still exists in `config.py` but is no longer used; the capture setting controls Rius too.)
 
@@ -176,6 +179,7 @@ Run from the project root with `uv run`. No `pytest` needed.
 | `uv run test/test_ingest.py` | `worker/ingest.py` end to end: real S3, Postgres, OpenAI, Pinecone. Options: `--keep` leaves the file, rows and vectors so you can look at them; `--cleanup` removes them |
 | `uv run test/test_graph.py` | Guardrails and routing (no network), then a real run of `chat()`: allowed user gets a cited answer, outsider and unrelated question get "no evidence", injection is blocked |
 | `uv run test/test_memory.py` | `app/memory.py` against Postgres: order, the `MEMORY_TURNS` cap, conversation and tenant separation, special characters |
+| `uv run test/test_auth.py` | The password gate with no keys: right/wrong/near-miss passwords, malformed headers, every kind of URL protected, `/health/live` open, and open when no password is set (24 checks) |
 | `uv run test/test_main.py` | The whole web API through FastAPI's test client: upload to S3 and ingest, chat, memory, approvals, admin-only access, feedback, metrics, tenant isolation (32 checks) |
 | `uv run test/test.py` | Bedrock Titan and Nova (currently fails, see section 7) |
 | `uv run test/test_claude.py` | Claude through Bedrock (currently fails, same reason) |
@@ -209,7 +213,7 @@ Leave out of commits: `.vscode/` and `umbrella.session.sql` (local editor files)
 - **`.github/workflows/ci.yml`**: job `test` (locked install, compile everything, `test_config`, `test_graph --offline`, `test_observability`) then job `docker` (build, start, check `/health/live`, `/`, the JS and the CSS). It uses no secrets, so the tests that call real services stay manual.
 - **`render.yaml`**: a Render blueprint for one Docker web service in the Oregon region (same as the database). `autoDeployTrigger: checksPass` means Render deploys only after CI passes. Secret variables are `sync: false`: Render asks for them once when the service is created.
 - Tested locally: the three offline test steps in a clean copy without `.env`, and the image build, start and health check. Not yet run: the workflow on GitHub and the deploy on Render.
-- **Warning:** a deployed service is public and the app has no login, so anyone with the URL can use your API credits and see your documents. Do not share the URL, or add authentication first.
+- **Access control:** a deployed service is public. Set `APP_PASSWORD` (a secret in `render.yaml`, entered in the Render dashboard); the browser then asks for it before showing anything. Only `/health/live` stays open, for Render's health check. Without it, anyone with the URL can use your API credits and see your documents.
 - Tests that need real services are run by hand: `test_vector`, `test_aws`, `test_ingest`, `test_memory`, `test_main`, and the live part of `test_graph` and `test_observability`.
 
 ## 13. Habits worth keeping

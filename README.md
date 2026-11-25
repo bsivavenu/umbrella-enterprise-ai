@@ -100,6 +100,7 @@ then ask questions such as "How many vacation days do I get?".
 | AWS S3 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET` |
 | Postgres | `DATABASE_URL` |
 | Tracing (optional) | `OBSERVABILITY_PROVIDER`, `OBSERVABILITY_CAPTURE`, `LANGSMITH_API_KEY` or `RIUS_API_KEY` |
+| Access (recommended when public) | `APP_PASSWORD`: one shared password, asked by the browser. Empty means no password |
 
 The S3 bucket must allow `PUT` from the browser (a CORS rule), because uploads go straight to S3.
 `.env.example` lists every setting with its default. Never commit `.env`.
@@ -128,14 +129,15 @@ First-time setup on Render:
 1. In the Render dashboard choose **New > Blueprint** and connect this GitHub repository.
 2. Render reads `render.yaml` and asks for the secret values: `DATABASE_URL`, `OPENAI_API_KEY`,
    `ANTHROPIC_API_KEY`, `PINECONE_API_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
-   `S3_BUCKET` and `LANGSMITH_API_KEY`. They are stored in Render, never in git.
+   `S3_BUCKET`, `LANGSMITH_API_KEY` and `APP_PASSWORD` (the shared password for the app: choose a
+   long random one). They are stored in Render, never in git.
 3. Apply. When the deploy finishes, open the service URL and check `/health/live`.
 4. If the database is new, create the tables once: `uv run scripts/init_db.py` (see Quick start).
 
 The service runs in the Oregon region, next to the database. The free plan sleeps when idle and
 takes about a minute to wake; choose a paid plan in `render.yaml` for always-on.
-**Anyone with the service URL can use the app and your API credits, because the demo has no login.**
-Do not share the URL, or add authentication first (see [Limitations](#limitations)).
+The app asks for `APP_PASSWORD` before showing anything (any username, the shared password). Without
+it, anyone with the service URL could use the app and your API credits, so always set it on a public URL.
 
 Run the container locally:
 
@@ -149,6 +151,7 @@ docker run --rm -p 8000:8000 --env-file .env umbrella-ai
 ```
 app/
   main.py            web API (FastAPI): upload, chat, history, feedback, approvals, metrics
+  auth.py            optional shared-password gate (APP_PASSWORD)
   graph.py           the question-answering pipeline (LangGraph)
   aws.py             OpenAI embeddings, Anthropic answers, S3 client
   vector.py          Pinecone: store, search with access filter, delete
@@ -184,6 +187,7 @@ uv run test/test_graph.py           # guardrails and the full question-answering
 uv run test/test_memory.py          # conversation history in Postgres
 uv run test/test_observability.py   # LangSmith / Rius / off switch
 uv run test/test_main.py            # the whole web API end to end
+uv run test/test_auth.py            # the shared-password gate (no keys needed)
 ```
 
 `test/test.py` and `test/test_claude.py` try AWS Bedrock and are expected to fail on an account
@@ -191,8 +195,9 @@ without Bedrock access.
 
 ## Limitations
 
-- **No login.** Everyone is the same demo user (`app/demo_context.py`). Real authentication means
-  replacing `principal()` there; nothing else needs to change.
+- **No user accounts.** Everyone is the same demo user (`app/demo_context.py`). The optional
+  `APP_PASSWORD` is one shared password for the whole app (HTTP Basic), not per-user login. Real
+  authentication means replacing `principal()` there; nothing else needs to change.
 - **Simple guardrails.** Input and output checks are pattern matching. They stop obvious attacks,
   not clever ones. The real protection is the access filter in the search.
 - **Approvals are a record only.** Approving a request does not run any action; the app has no

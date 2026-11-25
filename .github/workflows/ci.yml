@@ -55,6 +55,9 @@ jobs:
       - name: Tracing switch (live parts skip themselves without keys)
         run: uv run test/test_observability.py
 
+      - name: Password gate
+        run: uv run test/test_auth.py
+
   docker:
     name: Docker image builds and starts
     needs: test
@@ -69,19 +72,21 @@ jobs:
       - name: Image must not contain secrets
         run: docker run --rm umbrella-ai:ci sh -c 'test ! -e /srv/.env && echo "no .env in image"'
 
-      - name: Start container
-        run: docker run -d --name umbrella -p 8000:8000 -e OBSERVABILITY_PROVIDER=none umbrella-ai:ci
+      - name: Start container (with a password, as in production)
+        run: docker run -d --name umbrella -p 8000:8000 -e OBSERVABILITY_PROVIDER=none -e APP_PASSWORD=ci-test-password umbrella-ai:ci
 
-      - name: App answers
+      - name: App answers, and the password gate holds
         run: |
           for i in $(seq 1 30); do
             curl -fsS http://127.0.0.1:8000/health/live && break
             sleep 2
           done
           curl -fsS http://127.0.0.1:8000/health/live
-          curl -fsS http://127.0.0.1:8000/ | grep -q "Umbrella"
-          curl -fsS -o /dev/null http://127.0.0.1:8000/static/js/app.js
-          curl -fsS -o /dev/null http://127.0.0.1:8000/static/css/styles.css
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/)" = "401"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -u any:wrong http://127.0.0.1:8000/)" = "401"
+          curl -fsS -u any:ci-test-password http://127.0.0.1:8000/ | grep -q "Umbrella"
+          curl -fsS -u any:ci-test-password -o /dev/null http://127.0.0.1:8000/static/js/app.js
+          curl -fsS -u any:ci-test-password -o /dev/null http://127.0.0.1:8000/static/css/styles.css
 
       - name: Show container logs if something failed
         if: failure()

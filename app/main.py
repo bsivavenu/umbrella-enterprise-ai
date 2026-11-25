@@ -2,6 +2,7 @@
 
     GET  /                                   the page
     GET  /health/live, /health/ready         is the app up / can it reach the database
+    (every URL except /health/live asks for APP_PASSWORD when that setting is set; see auth.py)
     POST /api/documents/uploads              step 1 of upload: register the file, get an S3 upload link
     POST /api/documents/complete             step 2 of upload: ingest the file (worker/ingest.py)
     GET  /api/documents                      documents this user may see
@@ -15,10 +16,11 @@
 Every endpoint takes `p: Principal = Depends(principal)` (demo_context.py), so all queries
 are filtered by that user's tenant, and by group for documents.
 """
+import logging
 import uuid
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -28,6 +30,7 @@ from app.observability import initialize
 
 initialize()  # start tracing before the traced modules below are used
 
+from app.auth import OPEN_PATHS, password_ok  # noqa: E402
 from app.aws import client  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.db import audit, connection  # noqa: E402
@@ -37,8 +40,11 @@ from app.guardrails import classify_input  # noqa: E402
 from app.memory import history, list_messages, save_turn  # noqa: E402
 from worker.ingest import process_s3_key  # noqa: E402
 
+log = logging.getLogger('umbrella.app')
 BASE = Path(__file__).resolve().parent
 app = FastAPI(title='Umbrella Enterprise RAG', docs_url='/api/docs')
+if not settings().app_password:
+    log.warning('APP_PASSWORD is not set: anyone who can reach this app can use it')
 app.mount('/static', StaticFiles(directory=BASE / 'static'), name='static')
 templates = Jinja2Templates(directory=BASE / 'templates')
 
@@ -46,6 +52,18 @@ ALLOWED_SUFFIXES = {'.pdf', '.docx', '.txt', '.md'}
 # Questions containing these words are held for an administrator instead of being answered.
 APPROVAL_TRIGGERS = ('delete', 'export', 'send to', 'update policy')
 BLOCKED_OUTPUT_MESSAGE = 'The response was blocked by the sensitive-data output guardrail.'
+
+
+# ---- optional shared password (see app/auth.py) ----
+
+@app.middleware('http')
+async def password_gate(request: Request, call_next):
+    password = settings().app_password
+    if password and request.url.path not in OPEN_PATHS \
+            and not password_ok(request.headers.get('authorization'), password):
+        return Response('Authentication required', status_code=401,
+                        headers={'WWW-Authenticate': 'Basic realm="Umbrella AI", charset="UTF-8"'})
+    return await call_next(request)
 
 
 # ---- request bodies (FastAPI validates these automatically) ----
