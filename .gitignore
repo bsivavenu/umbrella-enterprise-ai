@@ -228,3 +228,6 @@ __marimo__/
 
 # Browser test artifacts (screenshots, snapshots)
 .playwright-mcp/
+
+# macOS Finder files
+.DS_Store
