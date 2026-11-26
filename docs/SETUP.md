@@ -54,7 +54,7 @@ setup, then ingestion and RAG, then observability, then FastAPI and UI, then int
 | 12 | `worker/ingest.py` | Done | Document processing. Needs db, aws, vector |
 | 13 | `app/main.py`, `app/templates/`, `app/static/` | Done | The FastAPI app and UI. Needs everything above |
 | 14 | `README.md`, `docs/SETUP.md` | Done | Project overview and these notes |
-| 15 | `Dockerfile`, `.dockerignore`, `.github/workflows/ci.yml`, `render.yaml` | Done (not yet run on GitHub or Render) | Packaging, CI and deployment. The reference deploys to AWS EC2 with a self-hosted runner; this project uses GitHub Actions for CI and Render for deployment |
+| 15 | `Dockerfile`, `.dockerignore`, `.github/workflows/ci.yml`, `render.yaml` | Done and running (CI on GitHub, deployed on Render) | Packaging, CI and deployment. The reference deploys to AWS EC2 with a self-hosted runner; this project uses GitHub Actions for CI and Render for deployment |
 
 ## 4. What each file does
 
@@ -202,8 +202,7 @@ Run from the project root with `uv run`. No `pytest` needed.
 
 ## 11. Git state
 
-Everything up to the interface is committed and pushed to GitHub (`main`). Changes made after that and not yet committed: the `MIN_RELEVANCE` change, this file, `README.md`, and the deletion of the leftover `main.py` that `uv init` created in the project root (the real app file is `app/main.py`).
-Leave out of commits: `.vscode/` and `umbrella.session.sql` (local editor files). `.env` is gitignored.
+Everything is committed and pushed to GitHub (`main`), and every push runs CI. Local-only files, never committed: `.env` (secrets) and `.vscode/` plus `umbrella.session.sql` (editor files); all three are git-ignored.
 
 ## 12. CI/CD and deployment
 
@@ -211,7 +210,8 @@ Leave out of commits: `.vscode/` and `umbrella.session.sql` (local editor files)
 - **`.dockerignore`**: keeps `.env`, `.git`, `.venv`, tests, docs and sample documents out of the image. The CI job also checks the image has no `.env`.
 - **`.github/workflows/ci.yml`**: job `test` (locked install, compile everything, `test_config`, `test_graph --offline`, `test_observability`) then job `docker` (build, start, check `/health/live`, `/`, the JS and the CSS). It uses no secrets, so the tests that call real services stay manual.
 - **`render.yaml`**: a Render blueprint for one Docker web service in the Oregon region (same as the database). `autoDeployTrigger: checksPass` means Render deploys only after CI passes. Secret variables are `sync: false`: Render asks for them once when the service is created.
-- Tested locally: the three offline test steps in a clean copy without `.env`, and the image build, start and health check. Not yet run: the workflow on GitHub and the deploy on Render.
+- **Status:** CI passes on GitHub for every push (tests, then the Docker build and start check). The service is deployed on Render (Oregon, free plan) from `render.yaml`: the build succeeds, the browser's login box appears, and uploading, indexing and chatting were tested on the live site. Render redeploys after each push whose CI passes.
+- **Known limits of this deployment:** the free instance sleeps when idle (first request after a break takes about a minute); the password is one shared password, not per-user accounts; the app has no delete button for documents, so removing one means deleting its S3 file, database row and Pinecone vectors by hand; a free Render Postgres database expires about 30 days after creation, so check the plan of `umbrella-postgres`.
 - **Access control:** a deployed service is public. Set `APP_PASSWORD` (a secret in `render.yaml`, entered in the Render dashboard); the browser then asks for it before showing anything. Only `/health/live` stays open, for Render's health check. Without it, anyone with the URL can use your API credits and see your documents.
 - Tests that need real services are run by hand: `test_vector`, `test_aws`, `test_ingest`, `test_memory`, `test_main`, and the live part of `test_graph` and `test_observability`.
 
