@@ -6,11 +6,12 @@
     guard        reject empty or attack-like questions (guardrails.check_input)
     retrieve     embed the question, search Pinecone as this user, keep hits above min_relevance
     generate     ask the chat model to answer from that evidence only
-    validate     block answers that leak secrets (guardrails.check_output)
+    validate     block answers that leak secrets (guardrails.check_output); keep only the cited sources
     no_evidence  fixed reply when nothing authorized and relevant was found; the model is not called
 
 `chat(principal, question, history)` is the one function the web app calls.
 """
+import re
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -77,9 +78,21 @@ def generate(s):
     return {'answer': answer(s['question'], evidence, s.get('history', [])), 'status': 'answered'}
 
 
+def only_cited(answer, sources):
+    """Keep only the sources the answer cites, e.g. [1] or [1, 3]. Numbers are left as they were.
+
+    If the answer cites nothing we can match, keep every source, so evidence is never hidden
+    just because the model formatted its citations differently.
+    """
+    cited = {int(n) for group in re.findall(r'\[(\d+(?:\s*,\s*\d+)*)\]', answer)
+             for n in re.split(r'\s*,\s*', group)}
+    return [src for src in sources if src['index'] in cited] or sources
+
+
 @trace("validate")
 def validate(s):
-    return {'answer': check_output(s['answer'])}
+    checked = check_output(s['answer'])
+    return {'answer': checked, 'sources': only_cited(checked, s.get('sources', []))}
 
 
 def make_graph():

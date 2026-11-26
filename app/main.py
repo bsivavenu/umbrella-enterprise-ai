@@ -96,7 +96,8 @@ class ApprovalDecision(BaseModel):
 @app.get('/', response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse(request, 'index.html',
-                                      {'region': settings().aws_region, 'mode': 'single-workspace demo'})
+                                      {'region': settings().aws_region, 'mode': 'single-workspace demo',
+                                       'protected': bool(settings().app_password)})
 
 
 @app.get('/health/live')

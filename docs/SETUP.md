@@ -109,13 +109,15 @@ setup, then ingestion and RAG, then observability, then FastAPI and UI, then int
 
 **`app/demo_context.py`: who is asking.** One fixed `Principal` (subject `demo-operator`, tenant `demo-workspace`, group `workspace`, admin). Every endpoint receives it via `Depends(principal)`. Real login later means changing only `principal()`.
 
+**Citations:** after the answer is written, `graph.validate` keeps only the sources the answer actually cites (`[1]`, `[1, 3]`), so the interface no longer lists passages the model did not use. If it can match no citation, every source is kept.
+
 **`worker/ingest.py`: the librarian's assistant.** `process_s3_key(key)` locks the document row, downloads the file (size and PDF header checks), parses it (PDF by page, DOCX, text), cuts it into 1200-character chunks that overlap by 180, embeds and upserts them in batches of 50, then marks the row `ready` (or `failed`) and writes an audit event. Scanned PDFs are not supported (no OCR).
 
 **`app/main.py`: the web API.** Upload (two steps), document list, chat, saved conversations, feedback, admin metrics, approvals (list and decide) and guardrail counts. Approving a request only records the decision; nothing is executed. Everything is filtered by the user's tenant.
 
 **`app/templates/index.html`, `app/static/`: the interface.** Four tabs: Knowledge chat, Documents, Approvals, Metrics. Answers are rendered from simple markdown (lists, bold) by building DOM elements, never `innerHTML`. Enter sends, a refresh restores the conversation, and the welcome block hides once you start chatting.
 
-**`sample_docs/`:** three fake documents (leave policy, onboarding, IT security) for trying the app.
+**`sample_docs/`:** seven fake documents for trying the app, in four file types (text, Markdown, Word, PDF): leave, onboarding, IT security, holidays, expenses, remote work, travel. Its README lists a question and the expected answer for each.
 
 **schema.sql vs init_db.py vs db.py in one line:** the blueprint, the builder that runs it once, and the door the app uses afterwards.
 

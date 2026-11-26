@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fastapi import HTTPException  # noqa: E402
 
 from app.aws import embed  # noqa: E402
-from app.graph import chat, graph, route  # noqa: E402
+from app.graph import chat, graph, only_cited, route  # noqa: E402
 from app.guardrails import check_input, check_output  # noqa: E402
 from app.vector import delete_document, search, upsert  # noqa: E402
 
@@ -57,6 +57,16 @@ def part1_offline() -> None:
     check("password assignment in an answer is blocked", "blocked" in check_output("password: hunter2hunter2hunter2"))
     check("route: passages -> generate", route({'passages': [1]}) == 'generate')
     check("route: no passages -> no_evidence", route({'passages': []}) == 'no_evidence')
+    srcs = [{'index': i, 'title': f'doc{i}'} for i in (1, 2, 3)]
+    pick = lambda text: [s['index'] for s in only_cited(text, srcs)]  # noqa: E731
+    check("only_cited: one citation keeps one source", pick("24 days [1].") == [1])
+    check("only_cited: several citations keep those, numbers unchanged", pick("A [1] and C [3].") == [1, 3])
+    check("only_cited: [1, 3] form is understood", pick("Both apply [1, 3].") == [1, 3])
+    check("only_cited: repeated citations count once", pick("[2] then again [2] and [2].") == [2])
+    check("only_cited: no citation keeps every source", pick("I could not find it.") == [1, 2, 3])
+    check("only_cited: citing an unknown number keeps every source", pick("See [9].") == [1, 2, 3])
+    check("only_cited: other brackets are ignored", pick("Use the [HR] portal [2] (see [note]).") == [2])
+    check("only_cited: empty source list is fine", only_cited("x [1]", []) == [])
     names = set(graph.get_graph().nodes)
     check("graph has all 5 steps", {'guard', 'retrieve', 'no_evidence', 'generate', 'validate'} <= names)
 

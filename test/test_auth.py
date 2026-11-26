@@ -59,6 +59,7 @@ def main() -> int:
     check("page with a wrong password: 401", http.get("/", headers=basic("u", "wrong")).status_code == 401)
     r = http.get("/", headers=basic("u", PASSWORD))
     check("page with the right password: 200", r.status_code == 200 and "Umbrella" in r.text)
+    check("sidebar says the app is password protected", "Password protected" in r.text and "No login" not in r.text)
     check("static JS is protected", http.get("/static/js/app.js").status_code == 401)
     check("static JS with the password: 200",
           http.get("/static/js/app.js", headers=basic("u", PASSWORD)).status_code == 200)
@@ -71,7 +72,9 @@ def main() -> int:
     # ---- the app with no password set ----
     os.environ["APP_PASSWORD"] = ""
     get_settings.cache_clear()
-    check("no password configured: page is open", http.get("/").status_code == 200)
+    r = http.get("/")
+    check("no password configured: page is open", r.status_code == 200)
+    check("sidebar says no login when no password is set", "No login" in r.text and "Password protected" not in r.text)
     check("no password configured: static is open", http.get("/static/css/styles.css").status_code == 200)
 
     print(f"\n{'all passed' if failures == 0 else f'{failures} failed'}")

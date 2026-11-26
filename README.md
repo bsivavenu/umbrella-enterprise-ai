@@ -88,7 +88,8 @@ uv run uvicorn app.main:app --reload
 ```
 
 Open http://localhost:8000, go to **Documents**, upload the files in [`sample_docs/`](sample_docs),
-then ask questions such as "How many vacation days do I get?".
+then ask questions such as "How many vacation days do I get?" (the folder's README lists a question
+and the expected answer for each file).
 
 ### What you need in `.env`
 
