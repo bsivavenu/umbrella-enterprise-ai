@@ -115,9 +115,9 @@ setup, then ingestion and RAG, then observability, then FastAPI and UI, then int
 
 **`app/main.py`: the web API.** Upload (two steps), document list, chat, saved conversations, feedback, admin metrics, approvals (list and decide) and guardrail counts. Approving a request only records the decision; nothing is executed. Everything is filtered by the user's tenant.
 
-**`app/templates/index.html`, `app/static/`: the interface.** Four tabs: Knowledge chat, Documents, Approvals, Metrics. Answers are rendered from simple markdown (lists, bold) by building DOM elements, never `innerHTML`. Enter sends, a refresh restores the conversation, and the welcome block hides once you start chatting.
+**`app/templates/index.html`, `app/static/`: the interface.** Four tabs: Knowledge chat, Documents, Approvals, Metrics. The Documents tab uploads up to 10 files at a time, one after another, with a status line per file; a failing file (wrong type, over 10 MB, server error) is reported and the rest continue. Answers are rendered from simple markdown (lists, bold) by building DOM elements, never `innerHTML`. Enter sends, a refresh restores the conversation, and the welcome block hides once you start chatting.
 
-**`sample_docs/`:** seven fake documents for trying the app, in four file types (text, Markdown, Word, PDF): leave, onboarding, IT security, holidays, expenses, remote work, travel. Its README lists a question and the expected answer for each.
+**`sample_docs/`:** seven fake documents for trying the app, in four file types (text, Markdown, Word, PDF): leave, onboarding, IT security, holidays, expenses, remote work, travel. The guide `docs/SAMPLE_DOCS.md` lists a question and the expected answer for each (it is kept outside the folder so uploading the folder does not index the guide).
 
 **schema.sql vs init_db.py vs db.py in one line:** the blueprint, the builder that runs it once, and the door the app uses afterwards.
 
@@ -129,12 +129,11 @@ Names only. See `.env.example` for the template.
 - Uploads: `MAX_UPLOAD_BYTES` (default 10485760)
 - OpenAI / Anthropic: `OPENAI_API_KEY`, `OPENAI_EMBED_MODEL` (`text-embedding-3-large`), `ANTHROPIC_API_KEY`, `ANTHROPIC_CHAT_MODEL` (`claude-haiku-5-5`)
 - Embeddings size: `EMBED_DIM` (1024, must match the Pinecone index)
-- Bedrock (not used right now): `BEDROCK_EMBED_MODEL`, `BEDROCK_CHAT_MODEL` (`us.amazon.nova-2-lite-v1:0`)
 - Pinecone: `PINECONE_API_KEY`, `PINECONE_INDEX_NAME`, `PINECONE_CLOUD`, `PINECONE_REGION`, `PINECONE_READY_TIMEOUT`
 - Postgres: `DATABASE_URL`
 - Access: `APP_PASSWORD` (shared password for the whole app; empty = open)
 - RAG behaviour: `MIN_RELEVANCE` (0.30), `MEMORY_TURNS` (6), `HITL_ENABLED` (True)
-- Observability: `OBSERVABILITY_PROVIDER` (`langsmith` | `rius` | `none`), `OBSERVABILITY_CAPTURE` (`off` | `metadata` | `full`), `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`, `RIUS_API_KEY`, `RIUS_SERVICE_NAME`, `RIUS_DISABLED`. (`RIUS_CAPTURE_CONTENT` still exists in `config.py` but is no longer used; the capture setting controls Rius too.)
+- Observability: `OBSERVABILITY_PROVIDER` (`langsmith` | `rius` | `none`), `OBSERVABILITY_CAPTURE` (`off` | `metadata` | `full`), `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`, `RIUS_API_KEY`, `RIUS_SERVICE_NAME`, `RIUS_DISABLED`. (The capture setting controls Rius too.)
 
 Fixes made along the way:
 - `AWS-REGION` renamed to `AWS_REGION` (a hyphen is not valid in an environment variable name).
@@ -183,8 +182,6 @@ Run from the project root with `uv run`. No `pytest` needed.
 | `uv run test/test_memory.py` | `app/memory.py` against Postgres: order, the `MEMORY_TURNS` cap, conversation and tenant separation, special characters |
 | `uv run test/test_auth.py` | The password gate with no keys: right/wrong/near-miss passwords, malformed headers, every kind of URL protected, `/health/live` open, and open when no password is set (24 checks) |
 | `uv run test/test_main.py` | The whole web API through FastAPI's test client: upload to S3 and ingest, chat, memory, approvals, admin-only access, feedback, metrics, tenant isolation (32 checks) |
-| `uv run test/test.py` | Bedrock Titan and Nova (currently fails, see section 7) |
-| `uv run test/test_claude.py` | Claude through Bedrock (currently fails, same reason) |
 
 ## 9. Tooling set up
 

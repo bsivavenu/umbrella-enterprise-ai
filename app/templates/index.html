@@ -53,11 +53,12 @@
     <!-- 2. documents -->
     <section id="docsView" class="panel hidden">
       <h2>Knowledge library</h2>
-      <p>Upload an approved PDF, DOCX, TXT or Markdown file. Use non-sensitive demo documents only.</p>
+      <p>Upload approved PDF, DOCX, TXT or Markdown files (up to 10 files at a time, 10 MB each). Use non-sensitive demo documents only.</p>
       <form id="uploadForm">
-        <input id="file" type="file" accept=".pdf,.docx,.txt,.md" required>
-        <button>Upload document</button>
+        <input id="file" type="file" accept=".pdf,.docx,.txt,.md" multiple required>
+        <button>Upload documents</button>
       </form>
+      <div id="uploadStatus" aria-live="polite"></div>
       <div id="docs"></div>
     </section>
 

@@ -22,8 +22,9 @@ swapped for OpenAI and Anthropic (Bedrock was not available on the author's AWS 
 ## What it does
 
 - **Knowledge chat** with cited sources, conversation memory, and follow-up questions.
-- **Document upload** (PDF, DOCX, TXT, MD, up to 10 MB). Files go straight from the browser to S3,
-  are split into chunks, embedded, and stored in Pinecone.
+- **Document upload** (PDF, DOCX, TXT, MD; up to 10 files at a time, 10 MB each). Files go straight
+  from the browser to S3, are split into chunks, embedded, and stored in Pinecone. Each file shows
+  its own progress, and one failing file does not stop the rest.
 - **Access control**: every chunk carries an owner and allowed groups; search filters on them, so
   text a user may not read never reaches the model. Data is also separated per tenant.
 - **Guardrails**: blocks prompt-injection style questions and answers that leak secrets.
@@ -34,7 +35,7 @@ swapped for OpenAI and Anthropic (Bedrock was not available on the author's AWS 
 
 ## How it works
 
-**Architecture** (plain, editable versions with their HTML source are in [`docs/diagrams/`](docs/diagrams)):
+**Architecture** (the editable HTML sources of both diagrams, with their logo icons, are in [`docs/diagrams/`](docs/diagrams)):
 
 ![Umbrella AI architecture](docs/Umbrella%20AI%20Architecture%20Diagram.png)
 
@@ -88,8 +89,8 @@ uv run uvicorn app.main:app --reload
 ```
 
 Open http://localhost:8000, go to **Documents**, upload the files in [`sample_docs/`](sample_docs),
-then ask questions such as "How many vacation days do I get?" (the folder's README lists a question
-and the expected answer for each file).
+then ask questions such as "How many vacation days do I get?" ([`docs/SAMPLE_DOCS.md`](docs/SAMPLE_DOCS.md)
+lists a question and the expected answer for each file).
 
 ### What you need in `.env`
 
@@ -190,9 +191,6 @@ uv run test/test_observability.py   # LangSmith / Rius / off switch
 uv run test/test_main.py            # the whole web API end to end
 uv run test/test_auth.py            # the shared-password gate (no keys needed)
 ```
-
-`test/test.py` and `test/test_claude.py` try AWS Bedrock and are expected to fail on an account
-without Bedrock access.
 
 ## Limitations
 

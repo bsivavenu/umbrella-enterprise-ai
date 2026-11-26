@@ -183,21 +183,57 @@ async function loadDocs() {
   } catch (e) { $('docs').textContent = e.message; }
 }
 
-// Upload = 3 steps: (1) ask the server for a link, (2) send the file straight to S3, (3) tell the server to index it.
+// Upload = 3 steps per file: (1) ask the server for a link, (2) send the file straight to S3,
+// (3) tell the server to index it. Several files are handled one after another, because each file
+// is indexed inside its own request. One failing file does not stop the others.
+const MAX_FILES = 10;
+const MAX_BYTES = 10485760;   // same as MAX_UPLOAD_BYTES on the server
+
+function addUploadRow(name) {            // one status line per file; returns a function that updates it
+  const row = document.createElement('div');
+  row.className = 'upload-row';
+  const label = document.createElement('span');
+  label.className = 'upload-name';
+  label.textContent = name;
+  const state = document.createElement('span');
+  state.className = 'upload-state';
+  row.append(label, state);
+  $('uploadStatus').append(row);
+  return (text, kind = '') => { state.textContent = text; row.className = 'upload-row ' + kind; };
+}
+
+async function uploadOne(f, setState) {
+  if (f.size > MAX_BYTES) throw Error('larger than 10 MB');
+  setState('Preparing...');
+  const r = await api('/api/documents/uploads', {method: 'POST', body: JSON.stringify({filename: f.name})});
+  setState('Uploading...');
+  const up = await fetch(r.upload_url, {method: 'PUT', headers: r.headers, body: f});
+  if (!up.ok) throw Error('upload to S3 failed');
+  setState('Indexing (reading, embedding, storing)...');
+  await api('/api/documents/complete', {method: 'POST', body: JSON.stringify({document_id: r.document_id})});
+}
+
 $('uploadForm').onsubmit = async e => {
   e.preventDefault();
-  const f = $('file').files[0];
-  if (!f) return;
-  if (f.size > 10485760) { toast('Maximum file size is 10 MB'); return; }   // same as MAX_UPLOAD_BYTES
-  try {
-    const r = await api('/api/documents/uploads', {method: 'POST', body: JSON.stringify({filename: f.name})});
-    const up = await fetch(r.upload_url, {method: 'PUT', headers: r.headers, body: f});
-    if (!up.ok) throw Error('S3 upload failed');
-    toast('Uploaded to S3. Processing document now...');
-    await api('/api/documents/complete', {method: 'POST', body: JSON.stringify({document_id: r.document_id})});
-    toast('Document indexed in Pinecone!');
-    loadDocs();
-  } catch (err) { toast(err.message); }
+  const files = [...$('file').files];
+  if (!files.length) return;
+  if (files.length > MAX_FILES) { toast(`Please choose at most ${MAX_FILES} files at a time`); return; }
+  const button = e.target.querySelector('button');
+  button.disabled = true;
+  $('uploadStatus').replaceChildren();
+  let done = 0;
+  for (const f of files) {
+    const setState = addUploadRow(f.name);
+    try {
+      await uploadOne(f, setState);
+      setState('Indexed', 'ok');
+      done++;
+    } catch (err) { setState('Failed: ' + err.message, 'err'); }
+    loadDocs();                          // the list fills in as each file finishes
+  }
+  button.disabled = false;
+  e.target.reset();
+  toast(`${done} of ${files.length} document${files.length === 1 ? '' : 's'} indexed`);
 };
 
 // ---- metrics ----

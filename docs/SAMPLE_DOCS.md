@@ -1,7 +1,11 @@
 # Sample documents
 
-Fake company documents for trying the app. Upload them in the **Documents** tab (PDF, DOCX, TXT and
+Fake company documents for trying the app, in the [`sample_docs/`](../sample_docs) folder. In the
+**Documents** tab you can select all of them at once (up to 10 files per upload; PDF, DOCX, TXT and
 MD all work), wait for each to show `ready`, then ask the questions below.
+
+This guide lives here, not in `sample_docs/`, so that selecting the whole folder does not upload it
+into your knowledge base.
 
 | File | Type | Ask | You should get |
 |---|---|---|---|

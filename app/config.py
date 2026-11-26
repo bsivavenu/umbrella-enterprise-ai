@@ -19,12 +19,10 @@ class Settings(BaseSettings):
     # Uploads
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB
 
-    # Bedrock
-    bedrock_embed_model: str = "amazon.titan-embed-text-v2:0"
-    bedrock_chat_model: str = "us.amazon.nova-2-lite-v1:0"
+    # Embeddings: vector size, must match the Pinecone index
     embed_dim: int = 1024
 
-    # OpenAI (embeddings) and Anthropic (chat) -- used instead of Bedrock
+    # OpenAI (embeddings) and Anthropic (chat)
     openai_api_key: str = ""
     openai_embed_model: str = "text-embedding-3-large"  # output size set by embed_dim
     anthropic_api_key: str = ""
@@ -62,7 +60,6 @@ class Settings(BaseSettings):
     rius_api_key: str = ""
     rius_service_name: str = "umbrella_ai"
     rius_disabled: bool = False
-    rius_capture_content: bool = False
 
     @field_validator("observability_provider", "observability_capture", mode="before")
     @classmethod

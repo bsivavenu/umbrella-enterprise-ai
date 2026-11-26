@@ -13,10 +13,10 @@ from app.config import Settings, get_settings  # noqa: E402
 
 ENV_KEYS = [
     "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION", "S3_BUCKET",
-    "MAX_UPLOAD_BYTES", "BEDROCK_EMBED_MODEL", "BEDROCK_CHAT_MODEL", "EMBED_DIM",
+    "MAX_UPLOAD_BYTES", "EMBED_DIM",
     "PINECONE_API_KEY", "PINECONE_INDEX_NAME", "PINECONE_CLOUD", "PINECONE_REGION",
     "PINECONE_READY_TIMEOUT", "DATABASE_URL", "RIUS_API_KEY", "RIUS_SERVICE_NAME",
-    "RIUS_DISABLED", "RIUS_CAPTURE_CONTENT",
+    "RIUS_DISABLED",
 ]
 
 
@@ -30,13 +30,11 @@ def test_defaults() -> None:
     s = Settings(_env_file=None)
     assert s.aws_region == "us-east-1"
     assert s.max_upload_bytes == 10 * 1024 * 1024 == 10_485_760
-    assert s.bedrock_embed_model == "amazon.titan-embed-text-v2:0"
-    assert s.bedrock_chat_model == "us.amazon.nova-2-lite-v1:0"
     assert s.embed_dim == 1024
     assert s.pinecone_cloud == "aws" and s.pinecone_region == "us-east-1"
     assert s.pinecone_ready_timeout == 180
     assert s.rius_service_name == "umbrella_ai"
-    assert s.rius_disabled is False and s.rius_capture_content is False
+    assert s.rius_disabled is False
     assert s.s3_bucket == "" and s.database_url == "" and s.pinecone_api_key == ""
 
 
@@ -45,14 +43,13 @@ def test_env_overrides_and_type_coercion() -> None:
         "MAX_UPLOAD_BYTES": "2048",
         "EMBED_DIM": "512",
         "RIUS_DISABLED": "true",
-        "RIUS_CAPTURE_CONTENT": "1",
         "PINECONE_INDEX_NAME": "my-index",
         "AWS_REGION": "eu-west-1",
     })
     s = Settings(_env_file=None)
     assert s.max_upload_bytes == 2048 and isinstance(s.max_upload_bytes, int)
     assert s.embed_dim == 512
-    assert s.rius_disabled is True and s.rius_capture_content is True
+    assert s.rius_disabled is True
     assert s.pinecone_index_name == "my-index"
     assert s.aws_region == "eu-west-1"
 

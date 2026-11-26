@@ -7,4 +7,4 @@
   Amazon S3, Pinecone and OpenAI. Their official logos were not available from the icon library,
   so they are not reproduced.
 
-The plain diagrams are `../architecture.html` and `../workflow.html`; `../architecture-plain.png` and `../workflow-plain.png` are screenshots of them. The styled versions in `docs/` were made separately.
+The editable diagrams are `../architecture.html` and `../workflow.html` (open them in a browser). The styled PNGs shown in the README, in `docs/`, were made separately from the same content.
